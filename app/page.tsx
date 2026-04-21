@@ -1,22 +1,21 @@
-// app/page.tsx
+// app/page.js
 
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
-
-type Message = { role: 'user' | 'system'; content: any };
+import { formatSystemResponse } from './utils/formatter';
 
 export default function ShopTerm() {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef(null);
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!input.trim() || loading) return;
 
@@ -33,10 +32,15 @@ export default function ShopTerm() {
       });
       const data = await res.json();
       
-      let displayContent = data.success ? data.result : `Error: ${data.result.error}`;
-      setMessages(prev => [...prev, { role: 'system', content: displayContent }]);
+      setMessages(prev => [...prev, { 
+        role: 'system', 
+        content: formatSystemResponse(data) 
+      }]);
     } catch (err) {
-      setMessages(prev => [...prev, { role: 'system', content: 'SYSTEM ERROR: Core unreachable.' }]);
+      setMessages(prev => [...prev, { 
+        role: 'system', 
+        content: 'SYSTEM ERROR: Core unreachable.' 
+      }]);
     } finally {
       setLoading(false);
     }
@@ -50,18 +54,18 @@ export default function ShopTerm() {
           Shopping List Core UI // Status: {loading ? 'Processing' : 'Idle'}
         </header>
 
-        <div className="flex-1 overflow-y-auto space-y-4 mb-4 scrollbar-hide">
+        <div className="flex-1 overflow-y-auto space-y-6 mb-4 scrollbar-hide">
           {messages.length === 0 && (
-            <div className="text-zinc-600">Type "list" or "show items" to begin...</div>
+            <div className="text-zinc-600 italic">Ready for input...</div>
           )}
           {messages.map((msg, i) => (
-            <div key={i} className="whitespace-pre-wrap animate-in fade-in duration-300">
+            <div key={i} className="whitespace-pre-wrap animate-in fade-in slide-in-from-bottom-1 duration-300">
               <span className={msg.role === 'user' ? 'text-blue-400' : 'text-emerald-500'}>
                 {msg.role === 'user' ? '❯ ' : 'SYSTEM: '}
               </span>
-              {typeof msg.content === 'object' 
-                ? JSON.stringify(msg.content, null, 2) 
-                : msg.content}
+              <span className={msg.role === 'system' ? 'text-zinc-300' : ''}>
+                {msg.content}
+              </span>
             </div>
           ))}
           <div ref={scrollRef} />
@@ -75,8 +79,8 @@ export default function ShopTerm() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             disabled={loading}
-            spellCheck={false}
-            placeholder={loading ? "..." : ""}
+            spellCheck="false"
+            autoComplete="off"
           />
         </form>
       </div>
