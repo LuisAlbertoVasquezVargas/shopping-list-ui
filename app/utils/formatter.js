@@ -10,7 +10,9 @@ export const parseSystemResponse = (data) => {
   }
 
   if (res?.id && res?.name) {
-    return { type: 'notification', payload: `+ Added "${res.name}" (ID: ${res.id})` };
+    // If the backend sends metadata back on ADD, we show it
+    const meta = res.metadata ? ` [${res.metadata}]` : "";
+    return { type: 'notification', payload: `+ Added "${res.name}"${meta} (ID: ${res.id})` };
   }
 
   if (typeof res === 'boolean') {
