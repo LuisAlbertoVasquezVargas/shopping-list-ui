@@ -29,7 +29,7 @@ export default function ListView({ items }) {
                 {item.name}
               </td>
               <td className="px-3 py-2 text-xs text-zinc-500 italic font-light">
-                {item.metadata || item.comment || "—"}
+                {item.metadata || "—"}
               </td>
             </tr>
           ))}
