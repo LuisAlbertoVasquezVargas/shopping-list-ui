@@ -1,33 +1,30 @@
-// app/page.jsx
+// app/page.tsx
 
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, KeyboardEvent } from 'react';
 import { parseSystemResponse } from './utils/formatter';
 import ListView from './components/ListView';
 import HelpView from './components/HelpView';
 
 export default function ShopTerm() {
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState<any[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const scrollRef = useRef(null);
-  const inputRef = useRef(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Auto-scroll to bottom
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Handle Focus & Busy state
   useEffect(() => {
     if (!loading) {
       inputRef.current?.focus();
     }
   }, [loading]);
 
-  // Auto-expand textarea height based on content
   useEffect(() => {
     if (inputRef.current) {
       inputRef.current.style.height = 'auto';
@@ -36,14 +33,13 @@ export default function ShopTerm() {
   }, [input]);
 
   const handleTerminalClick = () => {
-    const selection = window.getSelection().toString();
+    const selection = window.getSelection()?.toString();
     if (!selection && inputRef.current) {
       inputRef.current.focus();
     }
   };
 
-  const handleSubmit = async (e) => {
-    if (e) e.preventDefault();
+  const handleSubmit = async () => {
     if (!input.trim() || loading) return;
 
     const userMsg = input;
@@ -52,7 +48,7 @@ export default function ShopTerm() {
     setLoading(true);
 
     try {
-      const res = await fetch('/api', {
+      const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: userMsg }),
@@ -62,14 +58,14 @@ export default function ShopTerm() {
     } catch (err) {
       setMessages(prev => [...prev, { 
         role: 'system', 
-        content: { type: 'error', payload: 'SYSTEM ERROR: Core unreachable.' } 
+        content: { type: 'error', payload: 'SYSTEM ERROR: Connection refused.' } 
       }]);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleKeyDown = (e) => {
+  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSubmit();
@@ -83,7 +79,7 @@ export default function ShopTerm() {
     >
       <div className="w-full max-w-2xl flex flex-col h-[90vh]">
         <header className="mb-4 text-zinc-500 text-[10px] border-b border-zinc-800 pb-2 uppercase tracking-[0.2em] flex justify-between">
-          <span>Shopping List Core v1.0.0</span>
+          <span>Shopping List Core v1.1.0</span>
           <span className={loading ? "animate-pulse text-blue-400" : "text-emerald-500"}>
             ● {loading ? 'Processing' : 'Ready'}
           </span>
@@ -111,14 +107,6 @@ export default function ShopTerm() {
                   </pre>
                 ) : (
                   <div className="mt-1">
-                    {msg.content.type === 'interpreted' && (
-                      <div className="mb-3">
-                        <div className="text-zinc-500 text-xs italic mb-2 border-l border-zinc-800 pl-2">
-                          "{msg.content.explanation}"
-                        </div>
-                        {Array.isArray(msg.content.data) ? <ListView items={msg.content.data} /> : null}
-                      </div>
-                    )}
                     {msg.content.type === 'help' && <HelpView />}
                     {msg.content.type === 'table' && <ListView items={msg.content.payload} />}
                     {msg.content.type === 'notification' && <div className="text-emerald-400 text-sm">{msg.content.payload}</div>}
@@ -140,6 +128,7 @@ export default function ShopTerm() {
           <span className="text-blue-500 mr-3 font-bold mt-1">❯</span>
           <textarea
             ref={inputRef}
+            rows={1}
             className="bg-transparent outline-none flex-1 text-[#ededed] caret-blue-500 resize-none overflow-hidden py-1 min-h-[24px] max-h-[200px]"
             placeholder={loading ? "..." : "Type a command..."}
             value={input}
