@@ -1,4 +1,4 @@
-// app/page.js
+// app/page.jsx
 
 "use client";
 
@@ -15,18 +15,25 @@ export default function ShopTerm() {
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
 
+  // Auto-scroll to bottom
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // FIX: Only auto-focus on load or after a command is sent, 
-  // but NEVER focus automatically just because a message was received 
-  // (to prevent hijacking active selections).
+  // Handle Focus & Busy state
   useEffect(() => {
     if (!loading) {
       inputRef.current?.focus();
     }
   }, [loading]);
+
+  // Auto-expand textarea height based on content
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.style.height = 'auto';
+      inputRef.current.style.height = `${inputRef.current.scrollHeight}px`;
+    }
+  }, [input]);
 
   const handleTerminalClick = () => {
     const selection = window.getSelection().toString();
@@ -36,7 +43,7 @@ export default function ShopTerm() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     if (!input.trim() || loading) return;
 
     const userMsg = input;
@@ -59,6 +66,13 @@ export default function ShopTerm() {
       }]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit();
     }
   };
 
@@ -92,7 +106,9 @@ export default function ShopTerm() {
               
               <div className="pl-4">
                 {msg.role === 'user' ? (
-                  <span className="text-zinc-100">{msg.content}</span>
+                  <pre className="text-zinc-100 font-mono whitespace-pre-wrap break-words leading-relaxed">
+                    {msg.content}
+                  </pre>
                 ) : (
                   <div className="mt-1">
                     {msg.content.type === 'interpreted' && (
@@ -120,18 +136,20 @@ export default function ShopTerm() {
           <div ref={scrollRef} />
         </div>
 
-        <form onSubmit={handleSubmit} className="flex border-t border-zinc-800 pt-4 bg-[#0a0a0a]">
-          <span className="text-blue-500 mr-3 font-bold">❯</span>
-          <input
+        <div className="flex border-t border-zinc-800 pt-4 bg-[#0a0a0a]">
+          <span className="text-blue-500 mr-3 font-bold mt-1">❯</span>
+          <textarea
             ref={inputRef}
-            className="bg-transparent outline-none flex-1 text-[#ededed] caret-blue-500"
+            className="bg-transparent outline-none flex-1 text-[#ededed] caret-blue-500 resize-none overflow-hidden py-1 min-h-[24px] max-h-[200px]"
+            placeholder={loading ? "..." : "Type a command..."}
             value={input}
             onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
             disabled={loading}
             spellCheck="false"
             autoComplete="off"
           />
-        </form>
+        </div>
       </div>
     </main>
   );
