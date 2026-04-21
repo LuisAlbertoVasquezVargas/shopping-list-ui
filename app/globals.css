@@ -24,3 +24,13 @@ body {
 ::-webkit-scrollbar-thumb {
   background: #262626;
 }
+
+[data-nextjs-vercel-toolbar],
+#nextjs-portal,
+div[data-nextjs-toast-wrapper],
+nextjs-portal {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
