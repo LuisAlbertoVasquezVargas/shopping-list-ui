@@ -3,7 +3,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
-import { formatSystemResponse } from './utils/formatter';
+import { parseSystemResponse } from './utils/formatter';
+import ListView from './components/ListView';
 
 export default function ShopTerm() {
   const [messages, setMessages] = useState([]);
@@ -40,12 +41,12 @@ export default function ShopTerm() {
       
       setMessages(prev => [...prev, { 
         role: 'system', 
-        content: formatSystemResponse(data) 
+        content: parseSystemResponse(data) 
       }]);
     } catch (err) {
       setMessages(prev => [...prev, { 
         role: 'system', 
-        content: 'SYSTEM ERROR: Core unreachable.' 
+        content: { type: 'error', payload: 'SYSTEM ERROR: Core unreachable.' } 
       }]);
     } finally {
       setLoading(false);
@@ -73,22 +74,36 @@ export default function ShopTerm() {
 
         <div className="flex-1 overflow-y-auto space-y-6 mb-4 scrollbar-hide">
           {messages.length === 0 && (
-            <div className="text-zinc-600 italic">Enter command to begin...</div>
+            <div className="text-zinc-600 italic border border-dashed border-zinc-800 p-4 text-center">
+              Awaiting commands... (e.g. "list", "add milk")
+            </div>
           )}
           {messages.map((msg, i) => (
-            <div key={i} className="whitespace-pre-wrap animate-in fade-in slide-in-from-bottom-1 duration-200">
-              <span className={msg.role === 'user' ? 'text-blue-400' : 'text-emerald-500'}>
-                {msg.role === 'user' ? '❯ ' : 'SYSTEM: '}
-              </span>
-              <span className={msg.role === 'system' ? 'text-zinc-300' : ''}>
-                {msg.content}
-              </span>
+            <div key={i} className="animate-in fade-in slide-in-from-bottom-1 duration-200">
+              <div className="flex items-center gap-2 mb-1">
+                <span className={msg.role === 'user' ? 'text-blue-400' : 'text-emerald-500'}>
+                  {msg.role === 'user' ? '❯' : 'SYSTEM'}
+                </span>
+              </div>
+              
+              <div className="pl-4">
+                {msg.role === 'user' ? (
+                  <span className="text-zinc-100">{msg.content}</span>
+                ) : (
+                  <div className="mt-1">
+                    {msg.content.type === 'table' && <ListView items={msg.content.payload} />}
+                    {msg.content.type === 'notification' && <div className="text-emerald-400">{msg.content.payload}</div>}
+                    {msg.content.type === 'error' && <div className="text-red-400 font-bold">{msg.content.payload}</div>}
+                    {msg.content.type === 'text' && <div className="text-zinc-300">{msg.content.payload}</div>}
+                  </div>
+                )}
+              </div>
             </div>
           ))}
           <div ref={scrollRef} />
         </div>
 
-        <form onSubmit={handleSubmit} className="flex border-t border-zinc-800 pt-4">
+        <form onSubmit={handleSubmit} className="flex border-t border-zinc-800 pt-4 bg-[#0a0a0a]">
           <span className="text-blue-400 mr-2">❯</span>
           <input
             ref={inputRef}
