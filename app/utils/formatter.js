@@ -1,37 +1,12 @@
-// app/utils/formatter.js
+// app/utils/formatter.ts
+export function parseSystemResponse(data: any) {
+  if (!data) return { type: 'error', payload: 'Empty response from server.' };
+  
+  // Return the result object directly to the page logic
+  if (data.result) return data.result;
+  
+  // Fallback for direct type-based responses
+  if (data.type) return data;
 
-export const parseSystemResponse = (data) => {
-  // Handle cases where the backend returns success: true but the result itself is an error object
-  const res = data.result;
-
-  if (res?.error) {
-    return { type: 'error', payload: res.error };
-  }
-
-  if (!data.success) {
-    return { type: 'error', payload: res?.message || 'Unknown failure' };
-  }
-
-  if (res?.type === 'help') {
-    return { type: 'help' };
-  }
-
-  if (res?.explanation) {
-    return { 
-      type: 'interpreted', 
-      explanation: res.explanation, 
-      data: res.items || res 
-    };
-  }
-
-  if (res?.items && Array.isArray(res.items)) {
-    return { type: 'table', payload: res.items };
-  }
-
-  if (res?.id && res?.name) {
-    const meta = res.metadata ? ` [${res.metadata}]` : "";
-    return { type: 'notification', payload: `+ Processed "${res.name}"${meta}` };
-  }
-
-  return { type: 'text', payload: typeof res === 'object' ? JSON.stringify(res) : String(res) };
-};
+  return { type: 'text', payload: JSON.stringify(data) };
+}

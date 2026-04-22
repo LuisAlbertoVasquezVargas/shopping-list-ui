@@ -1,9 +1,7 @@
 // app/page.tsx
-
 "use client";
 
 import { useState, useEffect, useRef, KeyboardEvent } from 'react';
-import { parseSystemResponse } from './utils/formatter';
 import ListView from './components/ListView';
 import HelpView from './components/HelpView';
 
@@ -20,9 +18,7 @@ export default function ShopTerm() {
   }, [messages]);
 
   useEffect(() => {
-    if (!loading) {
-      inputRef.current?.focus();
-    }
+    if (!loading) inputRef.current?.focus();
   }, [loading]);
 
   useEffect(() => {
@@ -31,13 +27,6 @@ export default function ShopTerm() {
       inputRef.current.style.height = `${inputRef.current.scrollHeight}px`;
     }
   }, [input]);
-
-  const handleTerminalClick = () => {
-    const selection = window.getSelection()?.toString();
-    if (!selection && inputRef.current) {
-      inputRef.current.focus();
-    }
-  };
 
   const handleSubmit = async () => {
     if (!input.trim() || loading) return;
@@ -53,12 +42,17 @@ export default function ShopTerm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: userMsg }),
       });
+
       const data = await res.json();
-      setMessages(prev => [...prev, { role: 'system', content: parseSystemResponse(data) }]);
+      const result = data.result;
+
+      // Unified: Push text and data as one atomic entry
+      setMessages(prev => [...prev, { role: 'system', content: result }]);
+
     } catch (err) {
-      setMessages(prev => [...prev, { 
-        role: 'system', 
-        content: { type: 'error', payload: 'SYSTEM ERROR: Connection refused.' } 
+      setMessages(prev => [...prev, {
+        role: 'system',
+        content: { type: 'error', payload: 'SYSTEM ERROR: Connection refused.' }
       }]);
     } finally {
       setLoading(false);
@@ -73,10 +67,7 @@ export default function ShopTerm() {
   };
 
   return (
-    <main
-      className="min-h-screen bg-[#0a0a0a] text-[#ededed] font-mono p-4 sm:p-8 flex flex-col items-center select-text"
-      onClick={handleTerminalClick}
-    >
+    <main className="min-h-screen bg-[#0a0a0a] text-[#ededed] font-mono p-4 sm:p-8 flex flex-col items-center">
       <div className="w-full max-w-2xl flex flex-col h-[90vh]">
         <header className="mb-4 text-zinc-500 text-[10px] border-b border-zinc-800 pb-2 uppercase tracking-[0.2em] flex justify-between">
           <span>Shopping List Core v1.1.0</span>
@@ -85,7 +76,7 @@ export default function ShopTerm() {
           </span>
         </header>
 
-        <div className="flex-1 overflow-y-auto space-y-6 mb-4 scrollbar-hide">
+        <div className="flex-1 overflow-y-auto space-y-8 mb-4 scrollbar-hide">
           {messages.length === 0 && (
             <div className="text-zinc-800 text-xs border border-dashed border-zinc-900 p-8 text-center italic">
               Awaiting command. Try "help".
@@ -94,28 +85,33 @@ export default function ShopTerm() {
 
           {messages.map((msg, i) => (
             <div key={i} className="animate-in fade-in slide-in-from-bottom-1 duration-300">
-              <div className="flex items-center gap-2 mb-1">
-                <span className={msg.role === 'user' ? 'text-blue-500' : 'text-emerald-500 font-bold'}>
-                  {msg.role === 'user' ? '❯' : 'SYS'}
-                </span>
-              </div>
-              
-              <div className="pl-4">
+              {/* User Icon shown only for users */}
+              {msg.role === 'user' && (
+                <div className="text-blue-500 mb-1">❯</div>
+              )}
+
+              <div className={msg.role === 'user' ? 'pl-4' : 'pl-0'}>
                 {msg.role === 'user' ? (
-                  <pre className="text-zinc-100 font-mono whitespace-pre-wrap break-words leading-relaxed">
+                  <pre className="text-zinc-100 whitespace-pre-wrap break-words leading-relaxed">
                     {msg.content}
                   </pre>
                 ) : (
                   <div className="mt-1">
+                    {/* Integrated Brain Message */}
+                    {msg.content.meta?.message && (
+                      <div className="text-zinc-300 text-sm mb-4 leading-relaxed max-w-xl">
+                        {msg.content.meta.message}
+                      </div>
+                    )}
+
+                    {/* Conditional Rendering of Views */}
                     {msg.content.type === 'help' && <HelpView />}
                     {msg.content.type === 'table' && <ListView items={msg.content.payload} />}
-                    {msg.content.type === 'notification' && <div className="text-emerald-400 text-sm">{msg.content.payload}</div>}
                     {msg.content.type === 'error' && (
                       <div className="text-red-500 text-xs border-l border-red-900 pl-2 py-1">
                         ERROR: {msg.content.payload}
                       </div>
                     )}
-                    {msg.content.type === 'text' && <div className="text-zinc-400 text-sm">{msg.content.payload}</div>}
                   </div>
                 )}
               </div>
@@ -129,14 +125,13 @@ export default function ShopTerm() {
           <textarea
             ref={inputRef}
             rows={1}
-            className="bg-transparent outline-none flex-1 text-[#ededed] caret-blue-500 resize-none overflow-hidden py-1 min-h-[24px] max-h-[200px]"
+            className="bg-transparent outline-none flex-1 text-[#ededed] caret-blue-500 resize-none overflow-hidden py-1"
             placeholder={loading ? "..." : "Type a command..."}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             disabled={loading}
             spellCheck="false"
-            autoComplete="off"
           />
         </div>
       </div>
