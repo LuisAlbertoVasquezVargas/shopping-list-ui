@@ -4,15 +4,13 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   devIndicators: {
-    // buildActivity is often still supported, but appIsrStatus is the culprit here
-    buildActivity: false,
+    position: "bottom-right", // Use the valid property or remove the block
   },
-  // Ensure your rewrites are still there if you're using them
   async rewrites() {
     return [
       {
         source: '/api/:path*',
-        // next.config.ts
+        // Use a default for build-time validation
         destination: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/:path*`,
       },
     ];
