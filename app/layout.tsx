@@ -7,7 +7,11 @@ export const metadata = {
   description: "Shopping List Core UI",
 };
 
-export default function RootLayout({ children }) {
+export default function RootLayout({ 
+  children 
+}: { 
+  children: React.ReactNode 
+}) {
   return (
     <html lang="en">
       <body>
